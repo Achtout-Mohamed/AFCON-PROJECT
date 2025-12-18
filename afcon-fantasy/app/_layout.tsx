@@ -15,7 +15,13 @@ export default function RootLayout() {
         <Stack.Screen name="leaderboard" options={{ title: 'Leaderboard' }} />
         <Stack.Screen name="fixtures" options={{ title: 'Fixtures' }} />
         
-          {/* Test/Admin Screens */}
+        {/* League Screens - NEW */}
+        <Stack.Screen name="my-leagues" options={{ headerShown: false }} />
+        <Stack.Screen name="create-league" options={{ headerShown: false }} />
+        <Stack.Screen name="join-league" options={{ headerShown: false }} />
+        <Stack.Screen name="league-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="browse-leagues" options={{ headerShown: false }} />
+        {/* Test/Admin Screens */}
         <Stack.Screen 
           name="test-api" 
           options={{ 
@@ -23,6 +29,7 @@ export default function RootLayout() {
             headerShown: false 
           }} 
         />
+        
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </AuthProvider>
