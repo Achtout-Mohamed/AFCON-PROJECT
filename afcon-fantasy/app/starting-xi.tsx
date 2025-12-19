@@ -12,7 +12,7 @@ import {
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { saveTeam } from '../teamService';
+import { saveTeam, saveUserTeam, getUserTeam } from '../teamService';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,16 +42,27 @@ export default function StartingXIScreen() {
     try {
       if (!currentUser) return;
 
-      const teamRef = doc(db, 'teams', currentUser.uid);
-      const teamSnap = await getDoc(teamRef);
-
-      if (!teamSnap.exists()) {
-        Alert.alert('Error', 'No squad found. Please select your squad first.');
-        router.back();
-        return;
+      // First try user_teams (new system)
+      const userTeamData = await getUserTeam(currentUser.uid);
+      
+      let teamData;
+      if (userTeamData) {
+        console.log('📋 Loading from user_teams');
+        teamData = userTeamData;
+      } else {
+        // Fallback to teams collection
+        console.log('📋 Loading from teams (legacy)');
+        const teamRef = doc(db, 'teams', currentUser.uid);
+        const teamSnap = await getDoc(teamRef);
+        
+        if (!teamSnap.exists()) {
+          Alert.alert('Error', 'No squad found. Please select your squad first.');
+          router.back();
+          return;
+        }
+        teamData = teamSnap.data();
       }
 
-      const teamData = teamSnap.data();
       const playerIds = teamData.squad;
 
       const playerPromises = playerIds.map(async (playerId: string) => {
@@ -172,23 +183,39 @@ export default function StartingXIScreen() {
     try {
       if (!currentUser) return;
 
+      // Show loading state
+      setLoading(true);
+      console.log('💾 Saving Starting XI...');
+
+      const totalValue = squadPlayers.reduce((sum, p) => sum + p.value, 0);
+      const budget = 100 - totalValue;
+
       const teamData = {
         squad: squadPlayers.map(p => p.id),
         starting_xi: startingXI.map(p => p.id),
         captain_id: captainId,
         vice_captain_id: viceCaptainId,
         formation: `${getPositionCount('DEF', startingXI)}-${getPositionCount('MID', startingXI)}-${getPositionCount('ATT', startingXI)}`,
-        total_value: squadPlayers.reduce((sum, p) => sum + p.value, 0),
+        total_value: totalValue,
+        budget: budget,
+        free_transfers: 1,
       };
 
+      // Save to user_teams collection (for transfers system)
+      await saveUserTeam(currentUser.uid, teamData);
+      console.log('✅ Team saved to user_teams!');
+
+      // Also save to teams collection (for backward compatibility)
       await saveTeam(currentUser.uid, teamData);
+      console.log('✅ Team saved to teams!');
       
-      Alert.alert('Success! 🎉', 'Your team is ready for AFCON 2025!', [
-        { text: 'OK', onPress: () => router.replace('/home' as any) }
-      ]);
+      // Navigate immediately after successful save
+      router.replace('/(tabs)' as any);
+      
     } catch (error) {
       console.error('❌ Error saving team:', error);
-      Alert.alert('Error', 'Failed to save team');
+      setLoading(false);
+      Alert.alert('Error', 'Failed to save team. Please try again.');
     }
   };
 
@@ -291,6 +318,13 @@ export default function StartingXIScreen() {
         colors={['#37003c', '#2b0030']}
         style={styles.header}
       >
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        
         <MaterialCommunityIcons name="account-group" size={48} color="#00ff87" />
         <Text style={styles.title}>Starting XI</Text>
         <Text style={styles.subtitle}>Select 11 players to start</Text>
@@ -328,19 +362,28 @@ export default function StartingXIScreen() {
       />
 
       <TouchableOpacity 
-        style={[styles.fabButton, !canSave && styles.fabButtonDisabled]} 
+        style={[styles.fabButton, (!canSave || loading) && styles.fabButtonDisabled]} 
         onPress={handleSaveTeam}
-        disabled={!canSave}
+        disabled={!canSave || loading}
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={canSave ? ['#00ff87', '#00d674'] : ['#ccc', '#999']}
+          colors={canSave && !loading ? ['#00ff87', '#00d674'] : ['#ccc', '#999']}
           style={styles.fabGradient}
         >
-          <Text style={styles.fabText}>
-            {canSave ? 'Confirm Team' : `Need: ${!captainId ? 'Captain' : !viceCaptainId ? 'Vice' : '11 players'}`}
-          </Text>
-          {canSave && <Ionicons name="checkmark-circle" size={24} color="#37003c" />}
+          {loading ? (
+            <>
+              <ActivityIndicator size="small" color="#37003c" />
+              <Text style={styles.fabText}>Saving...</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.fabText}>
+                {canSave ? 'Confirm Team' : `Need: ${!captainId ? 'Captain' : !viceCaptainId ? 'Vice' : '11 players'}`}
+              </Text>
+              {canSave && <Ionicons name="checkmark-circle" size={24} color="#37003c" />}
+            </>
+          )}
         </LinearGradient>
       </TouchableOpacity>
     </View>
@@ -368,6 +411,18 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingHorizontal: 20,
     alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   title: {
     fontSize: 28,

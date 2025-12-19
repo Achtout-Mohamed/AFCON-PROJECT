@@ -1,11 +1,7 @@
-// firebase.js
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-
-
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCELVwy1m5jsk3LUoh9b4lMAQiALHucTC0",
   authDomain: "afcon-fantasy-2025.firebaseapp.com",
@@ -18,10 +14,11 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
+// Initialize Auth (simple version - works for web and native)
+const auth = getAuth(app);
 
+// Initialize Firestore
+const db = getFirestore(app);
 
-// Initialize services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-
+export { auth, db };
 export default app;

@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 
 interface Match {
   id: string;

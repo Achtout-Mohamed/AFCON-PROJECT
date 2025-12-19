@@ -5,17 +5,23 @@ import { AuthProvider } from '../contexts/AuthContext';
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Stack>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}>
+        {/* Auth Screens */}
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ title: 'Create Account' }} />
-        <Stack.Screen name="home" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
+        
+        {/* Main App with Tabs */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        
+        {/* Standalone Screens (not in tabs) */}
         <Stack.Screen name="squad" options={{ title: 'Select Your Squad' }} />
         <Stack.Screen name="starting-xi" options={{ title: 'Starting XI' }} />
-        <Stack.Screen name="leaderboard" options={{ title: 'Leaderboard' }} />
-        <Stack.Screen name="fixtures" options={{ title: 'Fixtures' }} />
         
-          {/* Test/Admin Screens */}
+        {/* Test/Admin Screens */}
         <Stack.Screen 
           name="test-api" 
           options={{ 
@@ -23,7 +29,6 @@ export default function RootLayout() {
             headerShown: false 
           }} 
         />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </AuthProvider>
   );

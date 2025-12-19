@@ -16,6 +16,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "update:qualified:teams": "node ./scripts/update-afcon-teams-players-authenticated.js",
+    "update:teams:only": "node ./scripts/update-teams-only.js",
+    "force:clean:teams": "node ./scripts/force-clean-teams.js",
+    "add:teams": "node ./scripts/add-qualified-teams-only.js",
+    "seed:gameweeks": "node ./scripts/seed-gameweeks.js",
     "lint": "expo lint"
   },
   "dependencies": {

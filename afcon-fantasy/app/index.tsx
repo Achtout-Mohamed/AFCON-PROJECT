@@ -11,7 +11,7 @@ export default function Index() {
     // Check authentication and redirect
     const timer = setTimeout(() => {
       if (currentUser) {
-        router.replace('/home' as any);
+        router.replace('/(tabs)' as any); // ← FIXED: Go to tabs
       } else {
         router.replace('/login' as any);
       }

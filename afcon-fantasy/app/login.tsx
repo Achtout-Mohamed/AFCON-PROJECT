@@ -19,7 +19,7 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       await login(email, password);
-      router.replace('/home' as any);
+      router.replace('/(tabs)' as any); // ← FIXED: Go to tabs
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {

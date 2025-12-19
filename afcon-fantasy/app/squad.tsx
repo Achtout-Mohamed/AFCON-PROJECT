@@ -14,7 +14,7 @@ import {
 import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { saveTeam, getTeam } from '../teamService';
+import { saveTeam, getTeam, saveUserTeam, getUserTeam } from '../teamService';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -63,14 +63,27 @@ export default function SquadSelectionScreen() {
 
       // Load existing squad if user has one
       if (currentUser) {
-        const existingTeam = await getTeam(currentUser.uid);
+        // First check user_teams collection (new transfers system)
+        const userTeamData = await getUserTeam(currentUser.uid);
         
-        if (existingTeam && existingTeam.squad && existingTeam.squad.length > 0) {
-          console.log('📋 Loading existing squad:', existingTeam.squad);
-          
+        let squadIds: string[] = [];
+        
+        if (userTeamData && userTeamData.squad && userTeamData.squad.length > 0) {
+          console.log('📋 Loading squad from user_teams');
+          squadIds = userTeamData.squad;
+        } else {
+          // Fallback to old teams collection
+          const existingTeam = await getTeam(currentUser.uid);
+          if (existingTeam && existingTeam.squad && existingTeam.squad.length > 0) {
+            console.log('📋 Loading squad from teams (legacy)');
+            squadIds = existingTeam.squad;
+          }
+        }
+        
+        if (squadIds.length > 0) {
           // Get full player details for selected players
           const selectedPlayerDetails = await Promise.all(
-            existingTeam.squad.map(async (playerId: string) => {
+            squadIds.map(async (playerId: string) => {
               const playerDoc = await getDoc(doc(db, 'players', playerId));
               if (playerDoc.exists()) {
                 return { id: playerDoc.id, ...playerDoc.data() } as Player;
@@ -152,13 +165,26 @@ export default function SquadSelectionScreen() {
       }
 
       console.log('💾 Saving squad...');
+      
+      const squadIds = selectedPlayers.map(p => p.id);
+      const totalValue = calculateTotalValue();
+      const budget = BUDGET - totalValue; // Remaining budget
+
+      // Prepare team data
       const teamData = {
-        squad: selectedPlayers.map(p => p.id),
-        total_value: calculateTotalValue(),
+        squad: squadIds,
+        total_value: totalValue,
+        budget: budget,
+        free_transfers: 1, // Start with 1 free transfer
       };
 
+      // Save to user_teams collection (for transfers system)
+      await saveUserTeam(currentUser.uid, teamData);
+      console.log('✅ Squad saved to user_teams!');
+
+      // Also save to teams collection (for backward compatibility)
       await saveTeam(currentUser.uid, teamData);
-      console.log('✅ Squad saved!');
+      console.log('✅ Squad saved to teams!');
       
       router.push('/starting-xi' as any);
     } catch (error) {
@@ -197,7 +223,7 @@ export default function SquadSelectionScreen() {
       'TUN': '🇹🇳', 'RSA': '🇿🇦', 'COD': '🇨🇩', 'BFA': '🇧🇫',
       'GAB': '🇬🇦', 'UGA': '🇺🇬', 'ZAM': '🇿🇲', 'COM': '🇰🇲',
       'ZIM': '🇿🇼', 'ANG': '🇦🇴', 'TAN': '🇹🇿', 'BEN': '🇧🇯',
-      'BOT': '🇧🇼', 'SUD': '🇸🇩', 'EQG': '🇬�¶', 'MOZ': '🇲🇿',
+      'BOT': '🇧🇼', 'SUD': '🇸🇩', 'EQG': '🇬🇶', 'MOZ': '🇲🇿',
     };
     return flags[countryCode] || '⚽';
   };
@@ -286,7 +312,7 @@ export default function SquadSelectionScreen() {
           <View style={styles.placeholder} />
         </View>
 
-        {/* Budget Bar - FIXED */}
+        {/* Budget Bar */}
         <View style={styles.budgetBar}>
           <View style={styles.budgetItem}>
             <Text style={styles.budgetLabel}>Remaining</Text>
@@ -397,7 +423,7 @@ export default function SquadSelectionScreen() {
         }
       />
 
-      {/* Save Button - Shows Always if Squad is Complete */}
+      {/* Save Button */}
       {selectedPlayers.length === MAX_PLAYERS && (
         <TouchableOpacity 
           style={styles.continueBtn}
@@ -418,8 +444,6 @@ export default function SquadSelectionScreen() {
     </View>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
