@@ -374,7 +374,31 @@ export default function HomeScreen() {
             <Text style={styles.actionSubtitle}>Match schedule</Text>
           </TouchableOpacity>
         </View>
-
+{/* Quick Actions Grid - INCLUDING MY LEAGUES */}
+<View style={styles.actionsGrid}>
+  <TouchableOpacity 
+    style={styles.actionCard}
+    onPress={() => router.push('/my-leagues')}
+    activeOpacity={0.8}
+  >
+    <View style={[styles.actionIconBg, { backgroundColor: 'rgba(139, 92, 246, 0.1)' }]}>
+      <MaterialCommunityIcons name="trophy-variant" size={32} color="#8b5cf6" />
+    </View>
+    <Text style={styles.actionTitle}>My Leagues</Text>
+    <Text style={styles.actionSubtitle}>Compete with friends</Text>
+  </TouchableOpacity>
+  <TouchableOpacity 
+    style={styles.actionCard}
+    onPress={() => router.push('/squad' as any)}
+    activeOpacity={0.8}
+  >
+    <View style={styles.actionIconBg}>
+      <MaterialCommunityIcons name="account-group" size={32} color="#37003c" />
+    </View>
+    <Text style={styles.actionTitle}>Squad</Text>
+    <Text style={styles.actionSubtitle}>Manage team</Text>
+  </TouchableOpacity>
+</View>
         <View style={styles.spacer} />
       </ScrollView>
     </View>
@@ -584,7 +608,10 @@ const styles = StyleSheet.create({
   actionsGrid: {
     flexDirection: 'row',
     gap: 12,
+    marginBottom: 12, // ADD THIS - spacing between rows
   },
+  
+  // Keep all your existing actionCard styles - they're perfect!
   actionCard: {
     flex: 1,
     backgroundColor: '#fff',

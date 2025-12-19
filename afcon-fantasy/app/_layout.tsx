@@ -20,7 +20,14 @@ export default function RootLayout() {
         {/* Standalone Screens (not in tabs) */}
         <Stack.Screen name="squad" options={{ title: 'Select Your Squad' }} />
         <Stack.Screen name="starting-xi" options={{ title: 'Starting XI' }} />
-        
+
+        {/* League Screens */}
+        <Stack.Screen name="my-leagues" options={{ headerShown: false }} />
+        <Stack.Screen name="create-league" options={{ headerShown: false }} />
+        <Stack.Screen name="join-league" options={{ headerShown: false }} />
+        <Stack.Screen name="league-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="browse-leagues" options={{ headerShown: false }} />
+
         {/* Test/Admin Screens */}
         <Stack.Screen 
           name="test-api" 
